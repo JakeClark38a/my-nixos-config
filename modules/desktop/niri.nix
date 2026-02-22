@@ -1,4 +1,4 @@
-{ config, pkgs, systemSettings, desktopSettings, ... }:
+{ config, pkgs, inputs, systemSettings, desktopSettings, ... }:
 
 {
   # Import general desktop settings
@@ -6,18 +6,15 @@
     ./general.nix
   ];
 
-  # Enable Hyprland
-  programs.hyprland = {
-    enable = true;
-    xwayland.enable = true;
-  };
+  # Enable Niri compositor (native nixpkgs)
+  programs.niri.enable = true;
 
-  # Enable display manager for Hyprland with autologin
+  # Enable display manager for Niri with autologin
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.hyprland}/bin/Hyprland";
+        command = "niri-session";
         user = systemSettings.username;
       };
     };
@@ -32,30 +29,36 @@
     };
   };
 
-    # Essential packages for Hyprland
+  # Essential packages for Niri
   environment.systemPackages = with pkgs; [
     # Wayland utilities
     waybar          # Status bar
-    wofi            # Application launcher
+    wofi            # Application launcher (dmenu-style)
+    fuzzel          # Application launcher (recommended by niri)
     wl-clipboard    # Clipboard utilities
     grim            # Screenshot utility
     slurp           # Screen area selection
     swaynotificationcenter  # Notification daemon
-    hyprlock                # Hyprland-native screen locker
     swayidle        # Idle management
-    swww            # Wallpaper daemon for Wayland
-    hyprpaper       # Alternative wallpaper daemon for Hyprland
+    wlsunset        # Night light for Wayland
+    xwayland-satellite  # XWayland support for Niri
+    wl-color-picker    # Color picker for Wayland
     glfw            # OpenGL framework for Wayland
-    hyprsunset         # Night light for Hyprland (official hypr-ecosystem tool)
-    hyprpicker         # Color picker for Hyprland (official hypr-ecosystem tool)
-    # hyprshot        # Screenshot tool for Hyprland (commented out, use grim + slurp instead)
-    # Terminal emulator
-    kitty           # Terminal (you can change this)
-  ];
 
-  # Auto-login (optional, comment out if you prefer manual login)
-  # Note: With greetd, this would require additional configuration
-  # services.greetd.settings.default_session.command = "${pkgs.hyprland}/bin/Hyprland";
+    # COSMIC desktop applications
+    cosmic-term      # Terminal emulator
+    cosmic-files     # File manager
+    cosmic-launcher  # Application launcher
+
+    # Wallpaper daemon (awww from Codeberg flake)
+    inputs.awww.packages.${pkgs.system}.default
+
+    # Clipboard manager
+    cliphist        # Clipboard history manager
+
+    # Terminal emulator (fallback)
+    kitty           # Terminal (fallback)
+  ];
 
   # Optional, hint Electron apps to use Wayland:
   environment.sessionVariables = {
@@ -69,5 +72,9 @@
     QT_IM_MODULE = "fcitx";
     XMODIFIERS = "@im=fcitx";
     INPUT_METHOD = "fcitx";
+    # Niri session
+    XDG_CURRENT_DESKTOP = "niri";
+    XDG_SESSION_TYPE = "wayland";
+    XDG_SESSION_DESKTOP = "niri";
   };
 }
